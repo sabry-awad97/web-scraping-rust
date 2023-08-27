@@ -1,4 +1,5 @@
-use scraper::{ElementRef, Html, Selector};
+use regex::Regex;
+use scraper::{Html, Selector};
 use std::error::Error;
 
 #[tokio::main]
@@ -6,11 +7,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let url = "http://www.pythonscraping.com/pages/page3.html";
     let html = fetch_html(url).await?;
 
-    let img_src = "../img/gifts/img1.jpg";
-    if let Some(text) = find_previous_sibling_text(&html, img_src) {
-        println!("{}", text);
-    } else {
-        println!("Previous sibling text not found.");
+    let img_src_regex = r"\.\.\/img\/gifts\/img.*\.jpg";
+    let src_attributes = find_images_with_src_regex(&html, img_src_regex);
+    for src in src_attributes {
+        println!("{}", src);
     }
 
     Ok(())
@@ -22,19 +22,17 @@ async fn fetch_html(url: &str) -> Result<String, reqwest::Error> {
     Ok(body)
 }
 
-fn find_previous_sibling_text(html: &str, img_src: &str) -> Option<String> {
+fn find_images_with_src_regex(html: &str, img_src_regex: &str) -> Vec<String> {
     let document = Html::parse_document(html);
-    let img_selector = Selector::parse(&format!("img[src='{}']", img_src)).unwrap();
+    let img_selector = Selector::parse("img[src]").unwrap();
+    let regex = Regex::new(img_src_regex).unwrap();
 
-    if let Some(img_element) = document.select(&img_selector).next() {
-        if let Some(prev_sibling) = img_element
-            .parent()
-            .and_then(|parent| parent.prev_sibling())
-            .and_then(ElementRef::wrap)
-        {
-            return Some(prev_sibling.text().collect::<String>());
-        }
-    }
+    let src_attributes: Vec<String> = document
+        .select(&img_selector)
+        .filter_map(|element| element.value().attr("src"))
+        .filter(|src| regex.is_match(src))
+        .map(String::from)
+        .collect();
 
-    None
+    src_attributes
 }
