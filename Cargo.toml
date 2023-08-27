@@ -1,4 +1,8 @@
 [workspace]
 
-members = ["Ch.1 First Web Scraper", "Ch.2 Advanced HTML Parsing"]
+members = [
+    "Ch.1 First Web Scraper",
+    "Ch.2 Advanced HTML Parsing",
+    "Ch.3 Writing Web Crawlers",
+]
 resolver = "2"

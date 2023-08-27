@@ -1594,3 +1594,14 @@ dependencies = [
  "cfg-if",
  "windows-sys",
 ]
+
+[[package]]
+name = "writing_web_crawlers"
+version = "0.1.0"
+dependencies = [
+ "regex",
+ "reqwest",
+ "scraper",
+ "thiserror",
+ "tokio",
+]
