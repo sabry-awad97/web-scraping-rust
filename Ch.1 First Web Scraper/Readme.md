@@ -159,3 +159,52 @@ async fn main() {
     };
 }
 ```
+
+To make the code more robust and more informative:
+
+```rs
+use scraper::{Html, Selector};
+use std::error::Error;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    let title = get_title("http://www.pythonscraping.com/pages/page1.html").await?;
+
+    if let Some(title) = title {
+        println!("{}", title);
+    } else {
+        println!("Title could not be found");
+    }
+
+    Ok(())
+}
+
+async fn get_title(url: &str) -> Result<Option<String>, Box<dyn Error>> {
+    if let Some(body) = get_site_html(url).await? {
+        let document = Html::parse_document(&body);
+        let h1_selector = Selector::parse("body h1")?;
+
+        if let Some(h1_element) = document.select(&h1_selector).next() {
+            let title = h1_element.text().collect::<String>();
+            Ok(Some(title))
+        } else {
+            Ok(None)
+        }
+    } else {
+        Ok(None)
+    }
+}
+
+async fn get_site_html(url: &str) -> Result<Option<String>, Box<dyn Error>> {
+    let response = reqwest::get(url).await?;
+
+    if response.status().is_success() {
+        let body = response.text().await?;
+        Ok(Some(body))
+    } else {
+        Ok(None)
+    }
+}
+```
+
+Having generic functions such as `get_site_html` and `get_title` (complete with thorough exception handling) makes it easy to quickly - and reliably - scrape the web.
