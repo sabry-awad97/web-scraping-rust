@@ -175,3 +175,59 @@ fn find_links_in_body_content(html: &str) -> Vec<String> {
     links
 }
 ```
+
+## Crawling an Entire Site
+
+Web scrapers that traverse an entire site are good for many things, including the following:
+
+1. **Generating a site map**
+1. **Gathering data**
+
+Crawling an entire website involves systematically visiting and extracting information from all the pages within the website. This process is often used by search engines to index web content. Let's explore how to approach crawling an entire site.
+
+### Understanding Site Crawling
+
+Crawling an entire website involves systematically visiting and extracting information from all the pages within the website. This process is often used by search engines to index web content. Let's explore how to approach crawling an entire site.
+
+### Managing URLs and Depth
+
+When crawling a site, it's important to manage the URLs you've visited and the depth of your crawl. Here's a basic approach:
+
+1. **URL Queue**: Maintain a queue of URLs to visit. Start with the seed URL (the homepage), and enqueue its links for further exploration.
+
+1. **Visited URLs Set**: Keep a set of visited URLs to avoid revisiting the same page.
+
+1. **Depth Control**: Decide whether you want to limit the crawl depth. For instance, you might choose to crawl only up to a certain number of levels deep.
+
+### Recursive Crawling Algorithm
+
+Here's a high-level algorithm for crawling a site:
+
+1. Enqueue the seed URL.
+1. While the URL queue is not empty and the desired depth is not reached:
+   - Dequeue a URL.
+   - If the URL is not in the visited set:
+     - Fetch the webpage content.
+     - Parse the HTML to extract information.
+     - Enqueue the links found on the page.
+     - Add the URL to the visited set.
+
+### Dealing with Challenges
+
+Crawling entire sites can present challenges:
+
+1. **Robots.txt**: Some sites have a robots.txt file that specifies which pages should not be crawled. Respect this file to avoid legal and ethical issues.
+
+1. **Dynamic Content**: Some websites use JavaScript to load content dynamically. To crawl such sites, you might need to use headless browsers like Puppeteer.
+
+1. **Duplicate Content**: Be cautious of duplicate content and ensure you're not revisiting the same page multiple times.
+
+### Considerations for Large Sites
+
+Crawling large sites requires efficiency:
+
+1. **Parallelism**: Use multiple threads or asynchronous programming to speed up the crawling process.
+
+1. **Rate Limiting**: Some sites might block or throttle excessive requests. Implement rate limiting to avoid being blocked.
+
+1. **Data Storage**: Decide how you'll store the crawled data. A database is often used to organize and manage the extracted information.
