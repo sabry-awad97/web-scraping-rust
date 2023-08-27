@@ -1,35 +1,37 @@
-use html_tree_printer::HtmlTreePrinter;
-use scraper::Html;
 pub mod html_tree_printer;
 
-fn main() {
-    let html = r#"
-        <body>
-            <div class="wrapper">
-                <h1>Title</h1>
-                <div class="content">
-                    <table id="giftList">
-                        <tr>
-                            <th>Header 1</th>
-                            <th>Header 2</th>
-                            <th>Header 3</th>
-                            <th>Header 4</th>
-                        </tr>
-                        <tr class="gift" id="gift1">
-                            <td>Data 1</td>
-                            <td>Data 2</td>
-                            <span class="excitingNote">Note</span>
-                            <td>Data 3</td>
-                            <td><img src="img_url" alt="Gift Image"></td>
-                        </tr>
-                    </table>
-                </div>
-                <div class="footer"></div>
-            </div>
-        </body>
-    "#;
+use scraper::{Html, Selector};
+use std::error::Error;
 
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    let url = "http://www.pythonscraping.com/pages/page3.html";
+    let html = fetch_html(url).await?;
+
+    let table_id = "giftList";
+    let children = iterate_table_children(&html, table_id);
+    for child in children {
+        println!("{}", child);
+    }
+
+    Ok(())
+}
+
+async fn fetch_html(url: &str) -> Result<String, reqwest::Error> {
+    let response = reqwest::get(url).await?;
+    let body = response.text().await?;
+    Ok(body)
+}
+
+fn iterate_table_children(html: &str, table_id: &str) -> Vec<String> {
     let document = Html::parse_document(html);
-    let mut printer = HtmlTreePrinter::new();
-    printer.print_tree(&document.root_element());
+
+    let selector = Selector::parse(&format!("#{} tr", table_id)).unwrap();
+
+    let children: Vec<String> = document
+        .select(&selector)
+        .map(|element| element.text().collect())
+        .collect();
+
+    children
 }
