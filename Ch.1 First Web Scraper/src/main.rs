@@ -1,19 +1,24 @@
+use reqwest::Client;
 use scraper::{Html, Selector};
 
-fn main() {
-    let html = r#"
-        <html>
-            <body>
-                <h1>Hello</h1>
-                <h1>World</h1>
-            </body>
-        </html>
-    "#;
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = Client::new();
+    let response = client
+        .get("http://www.pythonscraping.com/pages/page1.html")
+        .send()
+        .await?
+        .text()
+        .await?;
 
-    let document = Html::parse_document(html);
-    let selector = Selector::parse("h1").unwrap();
+    let document = Html::parse_document(&response);
 
-    for h1 in document.select(&selector) {
-        println!("{}", h1.text().collect::<String>());
+    let h1_selector = Selector::parse("h1").unwrap();
+    if let Some(h1_element) = document.select(&h1_selector).next() {
+        println!("{}", h1_element.text().collect::<String>());
+    } else {
+        println!("No <h1> element found.");
     }
+
+    Ok(())
 }

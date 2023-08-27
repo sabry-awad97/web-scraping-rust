@@ -24,25 +24,29 @@ Here's a simple example of how you might use Reqwest to send a GET request to a 
 use reqwest::Client;
 
 #[tokio::main]
-use reqwest::Client;
-
-#[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
+    // Create a new instance of the reqwest Client.
     let client = Client::new();
+
+    // Send an HTTP GET request and await the response.
     let response = client
         .get("http://pythonscraping.com/pages/page1.html")
         .send()
         .await?;
 
+    // Check if the response indicates success.
     if response.status().is_success() {
+        // Read the response body as a string and await it.
         let body = response.text().await?;
 
+        // Print the body of the webpage.
         println!("Body: {}", body);
     } else {
+        // Print an error message if the request was not successful.
         println!("Request was not successful: {:?}", response.status());
     }
 
-    Ok(())
+    Ok(()) // Indicate that the main function completed successfully.
 }
 ```
 
@@ -91,5 +95,34 @@ fn main() {
     for h1 in document.select(&selector) {
         println!("{}", h1.text().collect::<String>());
     }
+}
+```
+
+Here's an example of using `scraper` along with `reqwest` to extract information:
+
+```rs
+use reqwest::Client;
+use scraper::{Html, Selector};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = Client::new();
+    let response = client
+        .get("http://www.pythonscraping.com/pages/page1.html")
+        .send()
+        .await?
+        .text()
+        .await?;
+
+    let document = Html::parse_document(&response);
+
+    let h1_selector = Selector::parse("h1").unwrap();
+    if let Some(h1_element) = document.select(&h1_selector).next() {
+        println!("{}", h1_element.text().collect::<String>());
+    } else {
+        println!("No <h1> element found.");
+    }
+
+    Ok(())
 }
 ```
