@@ -1,21 +1,19 @@
-use reqwest::Client;
+use scraper::{Html, Selector};
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = Client::new();
-    let response = client
-        .get("http://pythonscraping.com/pages/page1.html")
-        .send()
-        .await?;
+fn main() {
+    let html = r#"
+        <html>
+            <body>
+                <h1>Hello</h1>
+                <h1>World</h1>
+            </body>
+        </html>
+    "#;
 
-    if response.status().is_success() {
-        // Read the response body as a string
-        let body = response.text().await?;
+    let document = Html::parse_document(html);
+    let selector = Selector::parse("h1").unwrap();
 
-        println!("Body: {}", body);
-    } else {
-        println!("Request was not successful: {:?}", response.status());
+    for h1 in document.select(&selector) {
+        println!("{}", h1.text().collect::<String>());
     }
-
-    Ok(())
 }
