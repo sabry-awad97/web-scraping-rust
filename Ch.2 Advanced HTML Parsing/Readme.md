@@ -556,3 +556,10 @@ where
     matching_elements
 }
 ```
+
+## "Finding HTML Tags with Two Attributes
+
+```rs
+let matching_elements =
+        find_elements_with_closure(&html, |element| element.value().attrs.len() == 2);
+```

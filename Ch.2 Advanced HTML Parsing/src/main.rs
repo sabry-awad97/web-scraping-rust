@@ -6,10 +6,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let url = "http://www.pythonscraping.com/pages/page3.html";
     let html = fetch_html(url).await?;
 
-    let target_text = "Or maybe he's only resting?";
-    let matching_elements = find_elements_with_closure(&html, |element| {
-        element.text().collect::<String>() == target_text
-    });
+    let matching_elements =
+        find_elements_with_closure(&html, |element| element.value().attrs.len() == 2);
 
     for element in matching_elements {
         println!("{}", element);
