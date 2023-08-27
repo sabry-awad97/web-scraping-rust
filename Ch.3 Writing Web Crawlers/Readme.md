@@ -373,3 +373,33 @@ fn find_links(html: &str) -> Vec<String> {
     links
 }
 ```
+
+## Handling Redirects
+
+```rs
+use std::error::Error;
+
+use reqwest::{redirect, Client, Response};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    let url = "http://github.com";
+    let response = fetch_url_with_redirect_handling(url).await?;
+
+    println!("Final URL after following redirects: {}", response.url());
+    println!("Response status: {}", response.status());
+    println!("Response body:\n{}", response.text().await?);
+
+    Ok(())
+}
+
+async fn fetch_url_with_redirect_handling(url: &str) -> Result<Response, reqwest::Error> {
+    // Default will follow redirects up to a maximum of 10.
+    let client = Client::builder()
+        .redirect(redirect::Policy::limited(5))
+        .build()?;
+
+    let response = client.get(url).send().await?;
+    Ok(response)
+}
+```
