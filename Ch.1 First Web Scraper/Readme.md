@@ -163,11 +163,20 @@ async fn main() {
 To make the code more robust and more informative:
 
 ```rs
-use scraper::{Html, Selector};
-use std::error::Error;
+use reqwest::Error as ReqwestError;
+use scraper::{error::SelectorErrorKind, Html, Selector};
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+enum AppError {
+    #[error("HTTP request error: {0}")]
+    Http(#[from] ReqwestError),
+    #[error("Selector parsing error: {0}")]
+    SelectorParse(#[from] SelectorErrorKind<'static>),
+}
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), AppError> {
     let title = get_title("http://www.pythonscraping.com/pages/page1.html").await?;
 
     if let Some(title) = title {
@@ -179,7 +188,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-async fn get_title(url: &str) -> Result<Option<String>, Box<dyn Error>> {
+async fn get_title(url: &str) -> Result<Option<String>, AppError> {
     if let Some(body) = get_site_html(url).await? {
         let document = Html::parse_document(&body);
         let h1_selector = Selector::parse("body h1")?;
@@ -195,7 +204,7 @@ async fn get_title(url: &str) -> Result<Option<String>, Box<dyn Error>> {
     }
 }
 
-async fn get_site_html(url: &str) -> Result<Option<String>, Box<dyn Error>> {
+async fn get_site_html(url: &str) -> Result<Option<String>, AppError> {
     let response = reqwest::get(url).await?;
 
     if response.status().is_success() {
