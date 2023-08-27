@@ -1,4 +1,4 @@
-use scraper::Html;
+use scraper::{Html, Selector};
 use std::error::Error;
 
 #[tokio::main]
@@ -6,10 +6,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let url = "http://www.pythonscraping.com/pages/warandpeace.html";
     let html = fetch_html(url).await?;
 
-    let target_text = "the prince";
-    let count = count_text_occurrences(&html, target_text);
-
-    println!("Number of occurrences: {}", count);
+    let headings = find_all_tags(&html, "h1, h2, h3, h4, h5, h6");
+    for heading in headings {
+        println!("{}", heading);
+    }
 
     Ok(())
 }
@@ -20,13 +20,14 @@ async fn fetch_html(url: &str) -> Result<String, reqwest::Error> {
     Ok(body)
 }
 
-fn count_text_occurrences(html: &str, target_text: &str) -> usize {
+fn find_all_tags(html: &str, tags: &str) -> Vec<String> {
     let document = Html::parse_document(html);
-    let count = document
-        .root_element()
-        .text()
-        .filter(|text| text.contains(target_text))
-        .count();
+    let selector = Selector::parse(tags).unwrap();
 
-    count
+    let tags: Vec<String> = document
+        .select(&selector)
+        .map(|element| element.text().collect())
+        .collect();
+
+    tags
 }
