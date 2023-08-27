@@ -1,4 +1,6 @@
-use scraper::{ElementRef, Html};
+use html_tree_printer::HtmlTreePrinter;
+use scraper::Html;
+pub mod html_tree_printer;
 
 fn main() {
     let html = r#"
@@ -28,32 +30,6 @@ fn main() {
     "#;
 
     let document = Html::parse_document(html);
-    let mut depth = 0;
-    print_node(&document.root_element(), &mut depth);
-}
-
-fn print_node(element: &scraper::ElementRef, depth: &mut usize) {
-    let indent = "    ".repeat(*depth);
-    let tag_name = element.value().name();
-    let class_names = element
-        .value()
-        .classes()
-        .map(|c| format!(".{}", c))
-        .collect::<Vec<_>>();
-    
-    let id = element
-        .value()
-        .id()
-        .map(|id| format!("#{}", id))
-        .unwrap_or_default();
-
-    println!("{}— {}{}{}", indent, tag_name, class_names.join(""), id);
-
-    *depth += 1;
-
-    for child_element in element.children().filter_map(ElementRef::wrap) {
-        print_node(&child_element, depth);
-    }
-
-    *depth -= 1;
+    let mut printer = HtmlTreePrinter::new();
+    printer.print_tree(&document.root_element());
 }
