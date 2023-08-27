@@ -1625,6 +1625,7 @@ name = "writing_web_crawlers"
 version = "0.1.0"
 dependencies = [
  "fancy-regex",
+ "rand",
  "reqwest",
  "scraper",
  "thiserror",
