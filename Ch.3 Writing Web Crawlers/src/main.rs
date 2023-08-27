@@ -1,12 +1,11 @@
-use fancy_regex::Regex;
-use rand::{thread_rng, Rng};
 use scraper::{Html, Selector};
+use std::collections::HashSet;
 use std::error::Error;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let start_article = "/wiki/Kevin_Bacon";
-    follow_random_links(start_article).await?;
+    let start_page = "";
+    follow_links_recursive(start_page).await?;
 
     Ok(())
 }
@@ -17,37 +16,35 @@ async fn fetch_html(url: &str) -> Result<String, reqwest::Error> {
     Ok(body)
 }
 
-async fn follow_random_links(start_article: &str) -> Result<(), Box<dyn Error>> {
-    let mut rng = thread_rng();
-    let mut current_article = start_article.to_string();
+async fn follow_links_recursive(seed_url: &str) -> Result<(), Box<dyn Error>> {
+    let mut pages = HashSet::new();
+    let mut to_visit = vec![seed_url.to_string()];
 
-    loop {
-        let html = fetch_html(&format!("http://en.wikipedia.org{}", current_article)).await?;
-        let links = find_links_in_body_content(&html);
+    while let Some(current_page) = to_visit.pop() {
+        let html = fetch_html(&format!("http://en.wikipedia.org{}", current_page)).await?;
+        let links = find_links(&html);
 
-        if links.is_empty() {
-            break;
+        for link in links {
+            if !pages.contains(&link) {
+                println!("Visiting: {}", link);
+                pages.insert(link.clone());
+                to_visit.push(link);
+            }
         }
-
-        let random_index = rng.gen_range(0..links.len());
-        let new_article = &links[random_index];
-        println!("{}", new_article);
-
-        current_article = new_article.to_string();
     }
 
     Ok(())
 }
 
-fn find_links_in_body_content(html: &str) -> Vec<String> {
+fn find_links(html: &str) -> Vec<String> {
     let document = Html::parse_document(html);
-    let a_selector = Selector::parse("div#bodyContent a[href^='/wiki/']").unwrap();
-    let href_regex = r"^/wiki/((?!:).)*$";
-    let regex = Regex::new(href_regex).unwrap();
-    let links: Vec<String> = document
+    let a_selector = Selector::parse("a[href^='/wiki/']").unwrap();
+    let href_extractor =
+        |element: scraper::ElementRef| element.value().attr("href").map(String::from);
+
+    let links: Vec<_> = document
         .select(&a_selector)
-        .filter_map(|element| element.value().attr("href").map(String::from))
-        .filter(|href| regex.is_match(href).unwrap_or(false))
+        .filter_map(href_extractor)
         .collect();
 
     links
