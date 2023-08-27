@@ -221,3 +221,45 @@ fn find_elements_by_id(html: &str, id_value: &str) -> Vec<String> {
     elements
 }
 ```
+
+## Navigating Trees in HTML Parsing
+
+When you parse an HTML document, it's represented as a tree-like structure known as the Document Object Model (DOM). This tree structure consists of various elements and their relationships. Navigating this tree allows you to access and manipulate different parts of the HTML document.
+
+### Traversing Parents and Children
+
+When navigating a DOM tree, you can move between parent and child elements. For instance, in `scraper`, you can use methods like `.children()` and `.parent()` to traverse the tree:
+
+- `.parent()`: This method returns the parent element of the current element. It's useful when you want to move up the tree and access the container element that holds the current element.
+
+- `.children()`: This method returns an iterator over the child elements of the current element. It's useful when you want to access or manipulate the children of an element.
+
+```rs
+use scraper::{Html, Selector};
+
+fn main() {
+    let html = r#"
+        <div class="container">
+            <h1>Hello, <span class="name">Sabry</span>!</h1>
+            <p>Welcome to our website.</p>
+        </div>
+    "#;
+
+    let document = Html::parse_document(html);
+    let container_selector = Selector::parse(".container").unwrap();
+
+    // Get the container element
+    let container_element = document.select(&container_selector).next().unwrap();
+
+    // Using .children() to iterate over child elements
+    for child_element in container_element.children() {
+        println!("Child element: {:#?}", child_element);
+    }
+
+    // Using .parent() to get the parent element
+    let h1_selector = Selector::parse("h1").unwrap();
+    let h1_element = container_element.select(&h1_selector).next().unwrap();
+    let parent_element = h1_element.parent().unwrap();
+    println!("Parent element of h1: {:#?}", parent_element);
+}
+```

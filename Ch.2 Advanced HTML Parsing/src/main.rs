@@ -1,33 +1,27 @@
 use scraper::{Html, Selector};
-use std::error::Error;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
-    let url = "http://www.pythonscraping.com/pages/warandpeace.html";
-    let html = fetch_html(url).await?;
+fn main() {
+    let html = r#"
+        <div class="container">
+            <h1>Hello, <span class="name">Sabry</span>!</h1>
+            <p>Welcome to our website.</p>
+        </div>
+    "#;
 
-    let elements = find_elements_by_id(&html, "text");
-    for element in elements {
-        println!("{}", element);
+    let document = Html::parse_document(html);
+    let container_selector = Selector::parse(".container").unwrap();
+
+    // Get the container element
+    let container_element = document.select(&container_selector).next().unwrap();
+
+    // Using .children() to iterate over child elements
+    for child_element in container_element.children() {
+        println!("Child element: {:#?}", child_element);
     }
 
-    Ok(())
-}
-
-async fn fetch_html(url: &str) -> Result<String, reqwest::Error> {
-    let response = reqwest::get(url).await?;
-    let body = response.text().await?;
-    Ok(body)
-}
-
-fn find_elements_by_id(html: &str, id_value: &str) -> Vec<String> {
-    let document = Html::parse_document(html);
-    let selector = Selector::parse(&format!("#{}", id_value)).unwrap();
-
-    let elements: Vec<String> = document
-        .select(&selector)
-        .map(|element| element.text().collect())
-        .collect();
-
-    elements
+    // Using .parent() to get the parent element
+    let h1_selector = Selector::parse("h1").unwrap();
+    let h1_element = container_element.select(&h1_selector).next().unwrap();
+    let parent_element = h1_element.parent().unwrap();
+    println!("Parent element of h1: {:#?}", parent_element);
 }
