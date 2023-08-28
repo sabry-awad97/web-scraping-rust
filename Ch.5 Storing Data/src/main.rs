@@ -1,60 +1,46 @@
-use csv::Writer;
+use csv::WriterBuilder;
 use scraper::{Html, Selector};
 use std::error::Error;
-use std::fs::File;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let url = "http://en.wikipedia.org/wiki/Comparison_of_text_editors";
-    let html = fetch_html(url).await?;
+    // Send an HTTP GET request and get the response body as bytes
+    let response = reqwest::get("http://en.wikipedia.org/wiki/Comparison_of_text_editors")
+        .await?
+        .text()
+        .await?;
 
-    let table_selector = "table.wikitable";
-    let rows = find_table_rows(&html, table_selector);
+    // Parse the HTML response body using the scraper crate
+    let document = Html::parse_document(&response);
 
-    let csv_file_path = "editors.csv";
-    let csv_file = File::create(csv_file_path)?;
+    // Define a CSS selector to target the main comparison table
+    let table_selector = Selector::parse("table.wikitable")?;
 
-    let mut csv_writer = Writer::from_writer(csv_file);
+    // Find the main comparison table in the HTML document
+    if let Some(table) = document.select(&table_selector).nth(1) {
+        // Create a CSV file for writing
+        let mut csv_writer = WriterBuilder::new()
+            .has_headers(true)
+            .from_path("editors.csv")?;
 
-    for row in rows {
-        csv_writer.write_record(row)?;
+        // Iterate through table rows
+        for row in table.select(&Selector::parse("tr")?) {
+            let mut csv_row = Vec::new();
+
+            // Iterate through cells in the row
+            for cell in row.select(&Selector::parse("td, th")?) {
+                csv_row.push(cell.text().collect::<String>().trim().to_string());
+            }
+
+            // Write the CSV row
+            csv_writer.write_record(csv_row)?;
+        }
+
+        csv_writer.flush()?;
+        println!("CSV file 'editors.csv' written successfully!");
+    } else {
+        println!("Main comparison table not found.");
     }
-
-    csv_writer.flush()?;
-
-    println!("CSV file written successfully.");
 
     Ok(())
-}
-
-async fn fetch_html(url: &str) -> Result<String, reqwest::Error> {
-    let response = reqwest::get(url).await?;
-    let body = response.text().await?;
-    Ok(body)
-}
-
-fn find_table_rows<'a>(html: &'a str, selector: &'a str) -> Vec<Vec<String>> {
-    let document = Html::parse_document(html);
-    let table_selector = Selector::parse(selector).unwrap();
-    let row_selector = Selector::parse("tr").unwrap();
-
-    let selected_elements: std::iter::Skip<scraper::html::Select<'_, '_>> =
-        document.select(&table_selector).skip(1);
-
-    let mut table_rows = Vec::new();
-
-    for table in selected_elements {
-        let row_data: Vec<String> = table
-            .select(&row_selector)
-            .flat_map(|row| {
-                row.select(&Selector::parse("td").unwrap())
-                    .map(|cell| cell.text().collect::<String>())
-                    .collect::<Vec<_>>()
-            })
-            .collect();
-
-        table_rows.push(row_data);
-    }
-
-    table_rows
 }
