@@ -21,27 +21,25 @@ async fn fetch_html(url: &str) -> Result<String, reqwest::Error> {
 async fn follow_external_only(starting_site: &str) -> Result<(), Box<dyn Error>> {
     let mut rng = thread_rng();
     let mut current_site = starting_site.to_string();
+    let url = Url::parse(&current_site)?;
 
     loop {
         let html = fetch_html(&current_site).await?;
-        if let Ok(url) = Url::parse(&current_site) {
-            let domain = url.origin();
-            let external_links = find_external_links(&html, &domain);
+        let external_links = find_external_links(&html, &url.origin());
 
-            if external_links.is_empty() {
-                println!("No external links, looking around the site for one");
-                let internal_links = find_internal_links(&html, domain);
-                if let Some(internal_link) = internal_links.choose(&mut rng) {
-                    current_site = internal_link.to_string();
-                } else {
-                    break;
-                }
+        if external_links.is_empty() {
+            println!("No external links, looking around the site for one");
+            let internal_links = find_internal_links(&html, url.origin());
+            if let Some(internal_link) = internal_links.choose(&mut rng) {
+                current_site = internal_link.to_string();
             } else {
-                let random_index = rng.gen_range(0..external_links.len());
-                let external_link = &external_links[random_index];
-                println!("Random external link is: {}", external_link);
-                current_site = external_link.to_string();
+                break;
             }
+        } else {
+            let random_index = rng.gen_range(0..external_links.len());
+            let external_link = &external_links[random_index];
+            println!("Random external link is: {}", external_link);
+            current_site = external_link.to_string();
         }
     }
 
