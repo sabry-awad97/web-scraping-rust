@@ -1,6 +1,7 @@
 use scraper::{Html, Selector};
-use std::fs::File;
+use std::fs;
 use std::io::Write;
+use std::path::Path;
 
 #[derive(Debug, thiserror::Error)]
 enum AppError {
@@ -12,17 +13,19 @@ enum AppError {
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
-    let url = "http://www.pythonscraping.com";
-    let image_title = "logo01";
-    let image_file_name = "logo.jpg";
+    let base_url = "http://pythonscraping.com";
+    let download_directory = "downloaded";
 
-    let html = fetch_html(url).await?;
-    let image_location = find_image_location(&html, image_title);
-    if let Some(image_url) = image_location {
-        download_image(image_url, image_file_name).await?;
-        println!("Image downloaded successfully.");
-    } else {
-        println!("Image not found on the page.");
+    let html = fetch_html(base_url).await?;
+    let download_list = find_download_list(&html);
+
+    for download in download_list {
+        if let Some(file_url) = get_absolute_url(base_url, &download) {
+            println!("{}", file_url);
+            let download_path = get_download_path(&file_url, download_directory)?;
+            download_file(&file_url, &download_path).await?;
+            println!("Downloaded: {}", download_path);
+        }
     }
 
     Ok(())
@@ -34,21 +37,58 @@ async fn fetch_html(url: &str) -> Result<String, AppError> {
     Ok(body)
 }
 
-fn find_image_location(html: &str, title: &str) -> Option<String> {
+fn find_download_list(html: &str) -> Vec<String> {
     let document = Html::parse_document(html);
-    let selector = Selector::parse(&format!("img[title='{}']", title)).unwrap();
+    let selector = Selector::parse("[src]").unwrap();
 
-    if let Some(image_element) = document.select(&selector).next() {
-        image_element.value().attr("src").map(String::from)
+    document
+        .select(&selector)
+        .filter_map(|element| element.value().attr("src"))
+        .map(String::from)
+        .collect()
+}
+
+fn get_absolute_url(base_url: &str, source: &str) -> Option<String> {
+    if source.starts_with("http://") || source.starts_with("https://") {
+        Some(source.to_string())
     } else {
-        None
+        Some(format!("{}/{}", base_url, source))
     }
 }
 
-async fn download_image(image_url: String, file_name: &str) -> Result<(), AppError> {
-    let response = reqwest::get(&image_url).await?;
-    let mut image_file = File::create(file_name)?;
-    let image_bytes = response.bytes().await?;
-    image_file.write_all(&image_bytes)?;
+fn sanitize_filename(filename: &str) -> String {
+    filename.replace(['/', ':', '?'], "_")
+}
+
+fn get_download_path(file_url: &str, download_directory: &str) -> Result<String, AppError> {
+    let filename = file_url
+        .rsplit('/')
+        .next()
+        .unwrap_or("unknown_file")
+        .split('?')
+        .next()
+        .expect("Invalid file URL");
+
+    let sanitized_filename = sanitize_filename(filename);
+    let full_path = format!("{}/{}", download_directory, sanitized_filename);
+    let directory = Path::new(&full_path).parent().ok_or_else(|| {
+        AppError::FileError(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "Parent directory not found",
+        ))
+    })?;
+
+    if !directory.exists() {
+        fs::create_dir_all(directory)?;
+    }
+
+    Ok(full_path.to_string())
+}
+
+async fn download_file(file_url: &str, file_path: &str) -> Result<(), AppError> {
+    let response = reqwest::get(file_url).await?;
+    let mut file = fs::File::create(file_path)?;
+    let bytes = response.bytes().await?;
+    file.write_all(&bytes)?;
     Ok(())
 }
