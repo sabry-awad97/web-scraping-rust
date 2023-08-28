@@ -1,13 +1,16 @@
-use rand::seq::SliceRandom;
-use rand::{thread_rng, Rng};
+use async_recursion::async_recursion;
 use scraper::{Html, Selector};
+use std::collections::HashSet;
 use std::error::Error;
 use url::Url;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let starting_site = "http://oreilly.com";
-    follow_external_only(starting_site).await?;
+    let mut all_ext_links = HashSet::new();
+    let mut all_int_links = HashSet::new();
+
+    get_all_external_links(starting_site, &mut all_ext_links, &mut all_int_links).await?;
 
     Ok(())
 }
@@ -18,35 +21,35 @@ async fn fetch_html(url: &str) -> Result<String, reqwest::Error> {
     Ok(body)
 }
 
-async fn follow_external_only(starting_site: &str) -> Result<(), Box<dyn Error>> {
-    let mut rng = thread_rng();
-    let mut current_site = starting_site.to_string();
-    let url = Url::parse(&current_site)?;
+#[async_recursion]
+async fn get_all_external_links(
+    site_url: &str,
+    all_ext_links: &mut HashSet<String>,
+    all_int_links: &mut HashSet<String>,
+) -> Result<(), Box<dyn Error>> {
+    let html = fetch_html(site_url).await?;
+    let domain = Url::parse(site_url)?.origin();
+    let internal_links = find_internal_links(&html, &domain);
+    let external_links = find_external_links(&html, &domain);
 
-    loop {
-        let html = fetch_html(&current_site).await?;
-        let external_links = find_external_links(&html, &url.origin());
+    for link in external_links.iter() {
+        if !all_ext_links.contains(link) {
+            all_ext_links.insert(link.clone());
+            println!("{}", link);
+        }
+    }
 
-        if external_links.is_empty() {
-            println!("No external links, looking around the site for one");
-            let internal_links = find_internal_links(&html, url.origin());
-            if let Some(internal_link) = internal_links.choose(&mut rng) {
-                current_site = internal_link.to_string();
-            } else {
-                break;
-            }
-        } else {
-            let random_index = rng.gen_range(0..external_links.len());
-            let external_link = &external_links[random_index];
-            println!("Random external link is: {}", external_link);
-            current_site = external_link.to_string();
+    for link in internal_links.iter() {
+        if !all_int_links.contains(link) {
+            all_int_links.insert(link.clone());
+            get_all_external_links(link, all_ext_links, all_int_links).await?;
         }
     }
 
     Ok(())
 }
 
-fn find_internal_links(html: &str, domain: url::Origin) -> Vec<String> {
+fn find_internal_links(html: &str, domain: &url::Origin) -> Vec<String> {
     let document = Html::parse_document(html);
     let a_selector = Selector::parse("a[href]").unwrap();
     let mut internal_links = Vec::new();
@@ -54,7 +57,7 @@ fn find_internal_links(html: &str, domain: url::Origin) -> Vec<String> {
     for element in document.select(&a_selector) {
         if let Some(href) = element.value().attr("href") {
             if let Ok(url) = Url::parse(href) {
-                if url.origin() == domain {
+                if url.origin() == *domain {
                     internal_links.push(url.to_string());
                 }
             }

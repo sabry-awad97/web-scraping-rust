@@ -491,3 +491,9 @@ fn find_external_links(html: &str, exclude_domain: &url::Origin) -> Vec<String> 
     external_links
 }
 ```
+
+## Collect all External Links from a Site
+
+```rs
+
+```
