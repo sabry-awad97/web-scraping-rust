@@ -4,6 +4,7 @@ members = [
     "Ch.1 First Web Scraper",
     "Ch.2 Advanced HTML Parsing",
     "Ch.3 Writing Web Crawlers",
-    "Ch.4 Web Crawling Models"
+    "Ch.4 Web Crawling Models",
+    "Ch.5 Storing Data",
 ]
 resolver = "2"

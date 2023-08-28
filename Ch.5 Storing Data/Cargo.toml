@@ -1,0 +1,16 @@
+[package]
+name = "storing_data"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-recursion = "1.0.4"
+fancy-regex = "0.11.0"
+rand = "0.8.5"
+reqwest = { version = "0.11.20", features = ["json"] }
+scraper = "0.17.1"
+thiserror = "1.0.47"
+tokio = { version = "1.32.0", features = ["full"] }
+url = "2.4.0"
