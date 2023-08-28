@@ -1534,6 +1534,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "web_crawling_models"
+version = "0.1.0"
+dependencies = [
+ "async-recursion",
+ "fancy-regex",
+ "rand",
+ "reqwest",
+ "scraper",
+ "thiserror",
+ "tokio",
+ "url",
+]
+
+[[package]]
 name = "winapi"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
