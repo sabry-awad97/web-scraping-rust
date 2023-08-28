@@ -210,3 +210,49 @@ async fn download_file(file_url: &str, file_path: &str) -> Result<(), AppError> 
     Ok(())
 }
 ```
+
+## Storing Data in CSV Format
+
+Storing scraped data in CSV (Comma-Separated Values) format is a simple and widely used method. CSV files are human-readable and can be easily opened in spreadsheet applications like Microsoft Excel or Google Sheets. Let's explore how to store scraped data in CSV format.
+
+### Writing Data to CSV in Rust
+
+Rust provides crates that make working with CSV files straightforward. Here's an example of how to store scraped data to a CSV file using the `csv` crate:
+
+```rs
+use csv::Writer;
+use std::error::Error;
+use std::fs::File;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    let csv_file_path = "test.csv";
+
+    let csv_file = File::create(csv_file_path)?;
+    let mut csv_writer = Writer::from_writer(csv_file);
+
+    csv_writer.write_record(["number", "number plus 2", "number times 2"])?;
+
+    for i in 0..10 {
+        csv_writer.write_record([i.to_string(), (i + 2).to_string(), (i * 2).to_string()])?;
+    }
+
+    csv_writer.flush()?;
+
+    println!("CSV file written successfully.");
+
+    Ok(())
+}
+```
+
+### Benefits of CSV Storage
+
+- **Simplicity:** CSV is easy to work with and doesn't require special software to open.
+- **Compatibility:** CSV files can be imported into various applications, databases, and programming languages.
+- **Human-Readable:** The data is stored in plain text, making it easy to understand and debug.
+
+### Considerations
+
+- **Data Format:** Ensure that your data is properly formatted before writing to CSV. Strings and numbers should be in the correct format.
+- **Header Row:** Including a header row with column names improves the readability of the CSV file.
+- **Special Characters:** Be cautious with special characters like commas and line breaks in the data, as they might affect CSV parsing.
