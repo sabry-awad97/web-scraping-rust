@@ -287,12 +287,19 @@ MySQL is a popular open-source relational database management system that is com
 ### Integrating MySQL with Rust
 
 ```rs
+use std::env;
+
+use dotenvy::dotenv;
 use mysql::prelude::*;
 
 fn main() -> Result<(), mysql::Error> {
+    dotenv().ok();
+
+    let db_user = env::var("DB_USER").expect("DB_USER not set");
+    let db_pass = env::var("DB_PASS").expect("DB_PASS not set");
 
     let mut opts = mysql::OptsBuilder::new();
-    opts = opts.user(Some("root")).pass(Some("allah"));
+    opts = opts.user(Some(db_user)).pass(Some(db_pass));
 
     let pool = mysql::Pool::new(opts)?;
 
