@@ -279,3 +279,41 @@ async fn main() -> Result<(), Box<dyn Error>> {
 - **Data Format:** Ensure that your data is properly formatted before writing to CSV. Strings and numbers should be in the correct format.
 - **Header Row:** Including a header row with column names improves the readability of the CSV file.
 - **Special Characters:** Be cautious with special characters like commas and line breaks in the data, as they might affect CSV parsing.
+
+## Storing data in MySQL
+
+MySQL is a popular open-source relational database management system that is commonly used for storing and managing structured data. When combined with the Rust programming language, it can be a powerful tool for web scraping and data manipulation
+
+### Integrating MySQL with Rust
+
+```rs
+use mysql::prelude::*;
+
+fn main() -> Result<(), mysql::Error> {
+
+    let mut opts = mysql::OptsBuilder::new();
+    opts = opts.user(Some("root")).pass(Some("allah"));
+
+    let pool = mysql::Pool::new(opts)?;
+
+    let mut conn = pool.get_conn()?;
+
+    conn.query_drop("DROP DATABASE IF EXISTS scraping")?;
+    conn.query_drop("CREATE DATABASE scraping")?;
+    conn.query_drop("USE scraping")?;
+
+    conn.query_drop(
+        r#"
+        CREATE TABLE pages (
+            id BIGINT NOT NULL AUTO_INCREMENT,
+            title VARCHAR(200),
+            content VARCHAR(10000),
+            created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY(id)
+        )
+    "#,
+    )?;
+
+    Ok(())
+}
+```
