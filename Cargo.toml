@@ -6,5 +6,6 @@ members = [
     "Ch.3 Writing Web Crawlers",
     "Ch.4 Web Crawling Models",
     "Ch.5 Storing Data",
+    "Ch.6 Reading Documents",
 ]
 resolver = "2"
