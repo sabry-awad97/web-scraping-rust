@@ -7,9 +7,11 @@ edition = "2021"
 
 [dependencies]
 async-recursion = "1.0.4"
+async-trait = "0.1.73"
 csv = "1.2.2"
 dotenvy = "0.15.7"
 fancy-regex = "0.11.0"
+lettre = "0.10.4"
 mysql = "24.0.0"
 rand = "0.8.5"
 reqwest = { version = "0.11.20", features = ["json"] }
