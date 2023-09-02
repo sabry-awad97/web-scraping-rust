@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use fancy_regex::Regex;
 use reqwest::Client;
 use scraper::Html;
@@ -66,11 +68,16 @@ fn generate_ngrams_from_sentence(sentence: &[String], n: usize) -> Vec<Vec<Strin
     ngrams
 }
 
-fn generate_ngrams(text: &str, n: usize) -> Vec<Vec<String>> {
-    let mut ngrams: Vec<Vec<String>> = Vec::new();
+fn get_ngrams(content: &str, n: usize) -> HashMap<String, usize> {
+    let cleaned_content = clean_input(content);
+    let mut ngrams: HashMap<String, usize> = HashMap::new();
 
-    for sentence in clean_input(text) {
-        ngrams.extend(generate_ngrams_from_sentence(&sentence, n))
+    for sentence in cleaned_content {
+        let sentence_ngrams = generate_ngrams_from_sentence(&sentence, n);
+        for ngram in sentence_ngrams {
+            let ngram_str = ngram.join(" ");
+            *ngrams.entry(ngram_str).or_insert(0) += 1;
+        }
     }
 
     ngrams
@@ -91,11 +98,12 @@ async fn main() -> Result<(), AppError> {
 
     // Generate 2-grams from the content
     let n = 2;
-    let ngrams = generate_ngrams(&content, n);
+    let ngrams = get_ngrams(&content, n);
 
-    // Print the first 10 2-grams and their count
-    println!("{:?}", &ngrams[0..10]);
-    println!("2-grams count is: {}", ngrams.len());
+    // Print the n-grams and their counts
+    for (ngram, count) in &ngrams {
+        println!("N-gram: '{}', Count: {}", ngram, count);
+    }
 
     Ok(())
 }
