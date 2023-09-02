@@ -2237,6 +2237,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "reading_writing_natural_languages"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "fancy-regex",
+ "reqwest",
+ "scraper",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "url",
+]
+
+[[package]]
 name = "redox_syscall"
 version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"

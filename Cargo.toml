@@ -8,5 +8,6 @@ members = [
     "Ch.5 Storing Data",
     "Ch.6 Reading Documents",
     "Ch.7 Cleaning Data",
+    "Ch.8 Reading and Writing Natural Languages",
 ]
 resolver = "2"
