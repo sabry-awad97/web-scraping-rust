@@ -1,11 +1,8 @@
 use async_trait::async_trait;
-use quick_xml::events::Event;
-use quick_xml::reader::Reader;
-use quick_xml::Error as QuickXmlError;
+use docx_rs::{read_docx, DocumentChild, ParagraphChild, ReaderError, RunChild};
 use reqwest::Client;
 use std::error::Error;
-use std::io::{self, Read};
-use zip::ZipArchive;
+use std::io;
 
 #[derive(thiserror::Error, Debug)]
 enum AppError {
@@ -15,11 +12,8 @@ enum AppError {
     #[error("I/O error: {0}")]
     IoError(#[from] io::Error),
 
-    #[error("Quick XML error: {0}")]
-    QuickXml(#[from] QuickXmlError),
-
-    #[error("Zip error: {0}")]
-    Zip(#[from] zip::result::ZipError),
+    #[error("Docx reader error: {0}")]
+    Reader(#[from] ReaderError),
 }
 
 #[async_trait]
@@ -47,93 +41,46 @@ impl DocxFetcher for ReqwestDocxFetcher {
     }
 }
 
-trait DocxReader {
-    fn read_docx(&self, docx_content: &[u8]) -> Result<String, AppError>;
+trait DocxTextExtractor {
+    fn extract_text(&self, docx_content: &[u8]) -> Result<String, AppError>;
 }
 
-struct DocxTextReader;
+struct DocxExtractor;
 
-impl DocxReader for DocxTextReader {
-    fn read_docx(&self, docx_content: &[u8]) -> Result<String, AppError> {
-        // Wrap the Word file in a Read cursor
-        let cursor = io::Cursor::new(docx_content);
+impl DocxTextExtractor for DocxExtractor {
+    fn extract_text(&self, docx_content: &[u8]) -> Result<String, AppError> {
+        let docx = read_docx(docx_content)?;
 
-        // Open the Word document as a Zip archive
-        let mut archive = ZipArchive::new(cursor)?;
-
-        // Read the content of 'word/document.xml'
-        let mut xml_content = String::new();
-
-        for i in 0..archive.len() {
-            let mut entry = archive.by_index(i)?;
-            if entry.name() == "word/document.xml" {
-                entry.read_to_string(&mut xml_content)?;
-                break;
+        let mut text = String::new();
+        for child in docx.document.children {
+            if let DocumentChild::Paragraph(p) = child {
+                for pc in p.children {
+                    if let ParagraphChild::Run(r) = pc {
+                        for rc in r.children {
+                            if let RunChild::Text(t) = rc {
+                                text.push_str(&t.text);
+                            }
+                        }
+                    }
+                }
             }
         }
 
-        Ok(xml_content)
-    }
-}
-
-trait DocxExtractor {
-    fn extract_text(&self, docx_content: &str) -> Result<String, AppError>;
-}
-
-struct QuickXmlDocxTextExtractor;
-
-impl DocxExtractor for QuickXmlDocxTextExtractor {
-    fn extract_text(&self, xml_content: &str) -> Result<String, AppError> {
-        let mut reader = Reader::from_str(xml_content);
-        reader.trim_text(true);
-
-        let mut buf = Vec::new();
-        let mut inside_w_t = false;
-
-        let mut extracted_text = String::new();
-        loop {
-            match reader.read_event_into(&mut buf) {
-                Ok(Event::Start(ref e)) => {
-                    if e.name().as_ref() == b"w:t" {
-                        inside_w_t = true;
-                    }
-                }
-                Ok(Event::Text(e)) => {
-                    if inside_w_t {
-                        let text = &e.unescape()?;
-                        extracted_text.push_str(text);
-                    }
-                }
-                Ok(Event::End(ref e)) => {
-                    if e.name().as_ref() == b"w:t" {
-                        inside_w_t = false;
-                    }
-                }
-                Ok(Event::Eof) => break,
-                _ => {}
-            }
-
-            buf.clear();
-        }
-
-        Ok(extracted_text)
+        Ok(text)
     }
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let docx_fetcher = ReqwestDocxFetcher::new();
-    let reader = DocxTextReader;
+    let text_extractor = DocxExtractor;
 
     let docx_url = "http://pythonscraping.com/pages/AWordDocument.docx";
 
     let docx_data = docx_fetcher.fetch_docx(docx_url).await?;
-    let xml_content = reader.read_docx(&docx_data)?;
+    let text_content = text_extractor.extract_text(&docx_data)?;
 
-    let text_extractor = QuickXmlDocxTextExtractor;
-    let extracted_text = text_extractor.extract_text(&xml_content)?;
-
-    println!("{}", extracted_text);
+    println!("{}", text_content);
 
     Ok(())
 }

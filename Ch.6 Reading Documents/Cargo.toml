@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 async-trait = "0.1.73"
 csv = "1.2.2"
+docx-rs = "0.4.7"
 fancy-regex = "0.11.0"
 pdf-extract = "0.7.0"
 quick-xml = "0.30.0"
