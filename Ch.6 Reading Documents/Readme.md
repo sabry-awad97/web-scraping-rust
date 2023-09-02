@@ -49,3 +49,20 @@ async fn main() -> Result<(), AppError> {
     Ok(())
 }
 ```
+
+### Filtering and Cleaning Text
+
+Suppose you've extracted text with HTML tags, and you want to clean it:
+
+```rs
+fn main() {
+    let raw_text = "<p>This is <strong>important</strong> text.</p>";
+
+    // Remove HTML tags using a regex pattern.
+    let cleaned_text = fancy_regex::Regex::new(r"<[^>]*>")
+        .unwrap()
+        .replace_all(raw_text, "");
+
+    println!("{}", cleaned_text);
+}
+```

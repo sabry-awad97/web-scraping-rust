@@ -1862,6 +1862,7 @@ name = "reading_documents"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "fancy-regex",
  "reqwest",
  "scraper",
  "thiserror",
