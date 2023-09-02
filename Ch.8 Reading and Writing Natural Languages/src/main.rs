@@ -28,6 +28,28 @@ impl WebFetcher {
 pub struct TextProcessor;
 
 impl TextProcessor {
+    pub fn is_common(ngram: &[&str]) -> bool {
+        let common_words = [
+            "THE", "BE", "AND", "OF", "A", "IN", "TO", "HAVE", "IT", "I", "THAT", "FOR", "YOU",
+            "HE", "WITH", "ON", "DO", "SAY", "THIS", "THEY", "IS", "AN", "AT", "BUT", "WE", "HIS",
+            "FROM", "THAT", "NOT", "BY", "SHE", "OR", "AS", "WHAT", "GO", "THEIR", "CAN", "WHO",
+            "GET", "IF", "WOULD", "HER", "ALL", "MY", "MAKE", "ABOUT", "KNOW", "WILL", "AS", "UP",
+            "ONE", "TIME", "HAS", "BEEN", "THERE", "YEAR", "SO", "THINK", "WHEN", "WHICH", "THEM",
+            "SOME", "ME", "PEOPLE", "TAKE", "OUT", "INTO", "JUST", "SEE", "HIM", "YOUR", "COME",
+            "COULD", "NOW", "THAN", "LIKE", "OTHER", "HOW", "THEN", "ITS", "OUR", "TWO", "MORE",
+            "THESE", "WANT", "WAY", "LOOK", "FIRST", "ALSO", "NEW", "BECAUSE", "DAY", "MORE",
+            "USE", "NO", "MAN", "FIND", "HERE", "THING", "GIVE", "MANY", "WELL",
+        ];
+
+        for word in ngram {
+            if common_words.contains(&word.to_uppercase().as_str()) {
+                return true;
+            }
+        }
+
+        false
+    }
+
     pub fn clean_sentence(sentence: &str) -> Vec<String> {
         let cleaned_words: Vec<String> = sentence
             .split_whitespace()
