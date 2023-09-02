@@ -15,9 +15,6 @@ enum AppError {
     #[error("I/O error: {0}")]
     IoError(#[from] io::Error),
 
-    #[error("UTF-8 decoding error: {0}")]
-    Utf8Decoding(#[from] std::str::Utf8Error),
-
     #[error("Quick XML error: {0}")]
     QuickXml(#[from] QuickXmlError),
 
