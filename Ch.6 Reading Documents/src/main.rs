@@ -1,6 +1,8 @@
 use async_trait::async_trait;
 use csv::{Error as CsvError, ReaderBuilder};
 use reqwest::{Client, Error as ReqwestError};
+use std::collections::HashMap;
+use std::io::Cursor;
 use std::string::FromUtf8Error;
 
 #[derive(thiserror::Error, Debug)]
@@ -13,6 +15,9 @@ enum AppError {
 
     #[error("CSV error: {0}")]
     Csv(#[from] CsvError),
+
+    #[error("JSON serialization error: {0}")]
+    JsonSerialization(#[from] serde_json::Error),
 }
 
 #[async_trait]
@@ -48,14 +53,20 @@ struct CsvReader;
 
 impl CsvParser for CsvReader {
     fn parse_csv(&self, csv_text: &str) -> Result<(), AppError> {
-        let mut csv_reader = ReaderBuilder::new().from_reader(csv_text.as_bytes());
+        let mut csv_reader = ReaderBuilder::new().from_reader(Cursor::new(csv_text));
 
-        for result in csv_reader.records() {
+        // Print field names
+        if let Ok(field_names) = csv_reader.headers() {
+            println!("field names: {}", field_names.iter().collect::<Vec<_>>().join(" | "));
+        }
+
+        println!("---------------------");
+
+        // Print rows as dictionaries
+        for result in csv_reader.deserialize::<HashMap<String, serde_json::Value>>() {
             let record = result?;
-            for field in record.iter() {
-                print!("{} | ", field);
-            }
-            println!();
+            let json_object = serde_json::to_value(&record)?;
+            println!("{}", json_object);
         }
 
         Ok(())
