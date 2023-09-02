@@ -504,20 +504,36 @@ impl DocxTextExtractor for DocxExtractor {
     fn extract_text(&self, docx_content: &[u8]) -> Result<String, AppError> {
         let docx = read_docx(docx_content)?;
 
-        let mut text = String::new();
-        for child in docx.document.children {
-            if let DocumentChild::Paragraph(p) = child {
-                for pc in p.children {
-                    if let ParagraphChild::Run(r) = pc {
-                        for rc in r.children {
-                            if let RunChild::Text(t) = rc {
-                                text.push_str(&t.text);
-                            }
-                        }
-                    }
+        let text = docx
+            .document
+            .children
+            .iter()
+            .filter_map(|child| {
+                if let DocumentChild::Paragraph(p) = child {
+                    Some(p)
+                } else {
+                    None
                 }
-            }
-        }
+            })
+            .flat_map(|p| {
+                p.children.iter().filter_map(|pc| {
+                    if let ParagraphChild::Run(r) = pc {
+                        Some(r)
+                    } else {
+                        None
+                    }
+                })
+            })
+            .flat_map(|r| {
+                r.children.iter().filter_map(|rc| {
+                    if let RunChild::Text(t) = rc {
+                        Some(t.text.clone())
+                    } else {
+                        None
+                    }
+                })
+            })
+            .collect::<Vec<String>>().join("");
 
         Ok(text)
     }
