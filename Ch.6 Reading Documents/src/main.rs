@@ -80,7 +80,8 @@ impl DocxTextExtractor for DocxExtractor {
                     }
                 })
             })
-            .collect::<Vec<String>>().join("");
+            .collect::<Vec<String>>()
+            .join("");
 
         Ok(text)
     }

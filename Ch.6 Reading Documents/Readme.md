@@ -242,6 +242,7 @@ async fn main() -> Result<(), AppError> {
 
 ```rs
 use async_trait::async_trait;
+use lopdf::Document;
 use reqwest::Client;
 use std::error::Error;
 
@@ -283,8 +284,16 @@ struct PdfExtractor;
 
 impl PdfTextExtractorService for PdfExtractor {
     fn extract_text(&self, pdf_data: &[u8]) -> Result<String, Box<dyn Error>> {
-        let pdf_text = pdf_extract::extract_text_from_mem(pdf_data)?;
+        let pdf_document = Document::load_mem(pdf_data)?;
 
+        let mut pages = Vec::new();
+        for page_number in pdf_document.get_pages().keys() {
+            let text = pdf_document.extract_text(&[*page_number])?;
+            pages.push(text);
+        }
+
+        let pdf_text = pages.join("\n");
+        
         Ok(pdf_text)
     }
 }
